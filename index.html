@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2f7d5f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-192.png">
 <title>Organizador Financeiro</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +16,10 @@
 
   <!-- CABEÇALHO -->
   <header class="app-header">
-    <h1>💰 Organizador Financeiro</h1>
+    <div class="app-header-topo">
+      <h1>💰 Organizador Financeiro</h1>
+      <button id="btnModoEscuro" class="btn-icone" title="Alternar modo escuro">🌙</button>
+    </div>
     <div class="seletor-mes">
       <button id="btnMesAnterior" class="btn-icone" title="Mês anterior">‹</button>
       <span id="labelMesAtual">Setembro de 2026</span>
@@ -134,6 +141,9 @@
 
 </div>
 
+<!-- BOTÃO FLUTUANTE — ACESSO RÁPIDO AO FORMULÁRIO (mobile) -->
+<button id="btnFlutuanteNovoGasto" class="btn-flutuante" title="Novo gasto">+</button>
+
 <!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO -->
 <div id="modalConfirmacao" class="modal oculto">
   <div class="modal-conteudo">
@@ -186,5 +196,15 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="script.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("service-worker.js").catch(function () {
+        // Se falhar, o app continua funcionando normalmente, só sem os
+        // benefícios de instalação/PWA.
+      });
+    });
+  }
+</script>
 </body>
 </html>
