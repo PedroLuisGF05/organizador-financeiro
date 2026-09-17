@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organizador Financeiro</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- CABEÇALHO -->
+  <header class="app-header">
+    <h1>💰 Organizador Financeiro</h1>
+    <div class="seletor-mes">
+      <button id="btnMesAnterior" class="btn-icone" title="Mês anterior">‹</button>
+      <span id="labelMesAtual">Setembro de 2026</span>
+      <button id="btnProximoMes" class="btn-icone" title="Próximo mês">›</button>
+    </div>
+  </header>
+
+  <!-- MENSAGENS (sucesso / erro) -->
+  <div id="mensagemFeedback" class="mensagem-feedback oculto"></div>
+
+  <!-- DASHBOARD -->
+  <section class="dashboard">
+    <div class="card-resumo">
+      <span class="card-resumo-label">Gastos do mês</span>
+      <span class="card-resumo-valor" id="dashTotalMes">R$ 0,00</span>
+    </div>
+    <div class="card-resumo">
+      <span class="card-resumo-label">Quantidade de gastos</span>
+      <span class="card-resumo-valor" id="dashQuantidade">0</span>
+    </div>
+    <div class="card-resumo">
+      <span class="card-resumo-label">Maior categoria</span>
+      <span class="card-resumo-valor" id="dashMaiorCategoria">—</span>
+    </div>
+    <div class="card-resumo">
+      <span class="card-resumo-label">Maior gasto</span>
+      <span class="card-resumo-valor" id="dashMaiorGasto">R$ 0,00</span>
+    </div>
+  </section>
+
+  <!-- FORMULÁRIO DE CADASTRO -->
+  <section class="secao-formulario">
+    <h2>Novo Gasto</h2>
+    <form id="formGasto">
+      <input type="hidden" id="gastoId">
+
+      <div class="campo">
+        <label for="campoDescricao">Descrição</label>
+        <input type="text" id="campoDescricao" placeholder="Ex: Supermercado" required>
+      </div>
+
+      <div class="linha-campos">
+        <div class="campo">
+          <label for="campoValor">Valor (R$)</label>
+          <input type="text" id="campoValor" inputmode="decimal" placeholder="Ex: 150,00" required>
+        </div>
+
+        <div class="campo">
+          <label for="campoData">Data</label>
+          <input type="date" id="campoData" required>
+        </div>
+      </div>
+
+      <div class="linha-campos">
+        <div class="campo">
+          <label for="campoFormaPagamento">Forma de pagamento</label>
+          <select id="campoFormaPagamento" required>
+            <option value="">Selecione</option>
+            <option value="Débito">Débito</option>
+            <option value="Pix">Pix</option>
+            <option value="Crédito">Crédito</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="campoCategoria">Categoria</label>
+          <select id="campoCategoria" required>
+            <option value="">Carregando...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="campoObservacao">Observação (opcional)</label>
+        <input type="text" id="campoObservacao" placeholder="Ex: Compra do mês">
+      </div>
+
+      <div class="acoes-formulario">
+        <button type="submit" id="btnRegistrar" class="btn-primario">Registrar</button>
+        <button type="button" id="btnCancelarEdicao" class="btn-secundario oculto">Cancelar edição</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- GRÁFICOS -->
+  <section class="secao-graficos">
+    <div class="grafico-card">
+      <h2>Gastos por categoria</h2>
+      <canvas id="graficoCategorias"></canvas>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section class="secao-historico">
+    <h2>Histórico de Gastos</h2>
+    <div id="listaHistorico" class="lista-historico">
+      <p class="mensagem-vazia">Carregando gastos...</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO -->
+<div id="modalConfirmacao" class="modal oculto">
+  <div class="modal-conteudo">
+    <h3>Excluir gasto?</h3>
+    <p>Esta ação não pode ser desfeita. Deseja realmente excluir este gasto?</p>
+    <div class="modal-acoes">
+      <button id="btnConfirmarExclusao" class="btn-perigo">Excluir</button>
+      <button id="btnCancelarExclusao" class="btn-secundario">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE DUPLICIDADE SUSPEITA -->
+<div id="modalDuplicidade" class="modal oculto">
+  <div class="modal-conteudo">
+    <h3>⚠️ Gasto parecido encontrado</h3>
+    <p id="mensagemDuplicidade">Já existe um gasto parecido registrado.</p>
+    <div class="modal-acoes">
+      <button id="btnRegistrarMesmoAssim" class="btn-primario">Registrar mesmo assim</button>
+      <button id="btnCancelarDuplicidade" class="btn-secundario">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loadingOverlay" class="loading-overlay oculto">
+  <div class="loading-spinner"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
