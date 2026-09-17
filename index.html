@@ -45,7 +45,10 @@
 
   <!-- FORMULÁRIO DE CADASTRO -->
   <section class="secao-formulario">
-    <h2>Novo Gasto</h2>
+    <div class="secao-header-com-acao">
+      <h2>Novo Gasto</h2>
+      <button type="button" id="btnAbrirCategorias" class="btn-link">Gerenciar categorias</button>
+    </div>
     <form id="formGasto">
       <input type="hidden" id="gastoId">
 
@@ -108,6 +111,22 @@
   <!-- HISTÓRICO -->
   <section class="secao-historico">
     <h2>Histórico de Gastos</h2>
+
+    <div class="filtros-historico">
+      <input type="text" id="filtroBusca" placeholder="🔎 Buscar por descrição...">
+
+      <select id="filtroCategoria">
+        <option value="">Todas as categorias</option>
+      </select>
+
+      <select id="filtroFormaPagamento">
+        <option value="">Todas as formas</option>
+        <option value="Débito">Débito</option>
+        <option value="Pix">Pix</option>
+        <option value="Crédito">Crédito</option>
+      </select>
+    </div>
+
     <div id="listaHistorico" class="lista-historico">
       <p class="mensagem-vazia">Carregando gastos...</p>
     </div>
@@ -135,6 +154,27 @@
     <div class="modal-acoes">
       <button id="btnRegistrarMesmoAssim" class="btn-primario">Registrar mesmo assim</button>
       <button id="btnCancelarDuplicidade" class="btn-secundario">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE GERENCIAR CATEGORIAS -->
+<div id="modalCategorias" class="modal oculto">
+  <div class="modal-conteudo modal-conteudo-largo">
+    <h3>Gerenciar Categorias</h3>
+
+    <form id="formNovaCategoria" class="form-categoria">
+      <input type="text" id="campoNovaCategoriaNome" placeholder="Nome da categoria" required>
+      <input type="color" id="campoNovaCategoriaCor" value="#2f7d5f" title="Cor da categoria">
+      <button type="submit" class="btn-primario">Adicionar</button>
+    </form>
+
+    <div id="listaCategoriasAdmin" class="lista-categorias-admin">
+      <p class="mensagem-vazia">Carregando categorias...</p>
+    </div>
+
+    <div class="modal-acoes">
+      <button id="btnFecharCategorias" class="btn-secundario">Fechar</button>
     </div>
   </div>
 </div>
