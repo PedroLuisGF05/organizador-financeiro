@@ -1,6 +1,6 @@
 /**
  * ORGANIZADOR FINANCEIRO — SCRIPT PRINCIPAL
- * Versão: v0.1
+ * Versão: v0.4
  *
  * IMPORTANTE: preencha as duas constantes abaixo antes de usar o app:
  * - URL_API: a URL do Web App publicado no Google Apps Script.
@@ -21,7 +21,13 @@ const estado = {
   graficoCategorias: null,
   idEmEdicao: null,
   idParaExcluir: null,
-  payloadPendenteDuplicidade: null
+  idCategoriaParaExcluir: null,
+  payloadPendenteDuplicidade: null,
+  filtros: {
+    busca: "",
+    categoria: "",
+    formaPagamento: ""
+  }
 };
 
 
@@ -54,10 +60,18 @@ function configurarEventos() {
     sairModoEdicao();
   });
 
-  document.getElementById("btnConfirmarExclusao").addEventListener("click", confirmarExclusao);
+  document.getElementById("btnConfirmarExclusao").addEventListener("click", function () {
+    if (estado.idCategoriaParaExcluir) {
+      confirmarExclusaoCategoria();
+    } else {
+      confirmarExclusao();
+    }
+  });
   document.getElementById("btnCancelarExclusao").addEventListener("click", function () {
     fecharModal("modalConfirmacao");
     estado.idParaExcluir = null;
+    estado.idCategoriaParaExcluir = null;
+    restaurarTextoModalConfirmacao();
   });
 
   document.getElementById("btnRegistrarMesmoAssim").addEventListener("click", function () {
@@ -70,6 +84,37 @@ function configurarEventos() {
   document.getElementById("btnCancelarDuplicidade").addEventListener("click", function () {
     fecharModal("modalDuplicidade");
     estado.payloadPendenteDuplicidade = null;
+  });
+
+  // Filtros do histórico
+  document.getElementById("filtroBusca").addEventListener("input", function (e) {
+    estado.filtros.busca = e.target.value.toLowerCase();
+    renderizarHistorico();
+  });
+
+  document.getElementById("filtroCategoria").addEventListener("change", function (e) {
+    estado.filtros.categoria = e.target.value;
+    renderizarHistorico();
+  });
+
+  document.getElementById("filtroFormaPagamento").addEventListener("change", function (e) {
+    estado.filtros.formaPagamento = e.target.value;
+    renderizarHistorico();
+  });
+
+  // Gerenciar categorias
+  document.getElementById("btnAbrirCategorias").addEventListener("click", function () {
+    abrirModal("modalCategorias");
+    renderizarCategoriasAdmin();
+  });
+
+  document.getElementById("btnFecharCategorias").addEventListener("click", function () {
+    fecharModal("modalCategorias");
+  });
+
+  document.getElementById("formNovaCategoria").addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    criarNovaCategoria();
   });
 }
 
@@ -165,6 +210,19 @@ function preencherSelectCategorias() {
     opcao.textContent = categoria.nome;
     select.appendChild(opcao);
   });
+
+  const selectFiltro = document.getElementById("filtroCategoria");
+  const valorAtualFiltro = selectFiltro.value;
+  selectFiltro.innerHTML = '<option value="">Todas as categorias</option>';
+
+  estado.categorias.forEach(function (categoria) {
+    const opcao = document.createElement("option");
+    opcao.value = categoria.nome;
+    opcao.textContent = categoria.nome;
+    selectFiltro.appendChild(opcao);
+  });
+
+  selectFiltro.value = valorAtualFiltro;
 }
 
 function corDaCategoria(nomeCategoria) {
@@ -172,6 +230,113 @@ function corDaCategoria(nomeCategoria) {
     return c.nome === nomeCategoria;
   });
   return categoria ? categoria.cor : "#95A5A6";
+}
+
+function renderizarCategoriasAdmin() {
+  const lista = document.getElementById("listaCategoriasAdmin");
+  lista.innerHTML = "";
+
+  if (estado.categorias.length === 0) {
+    lista.innerHTML = '<p class="mensagem-vazia">Nenhuma categoria cadastrada.</p>';
+    return;
+  }
+
+  estado.categorias.forEach(function (categoria) {
+    const item = document.createElement("div");
+    item.className = "item-categoria-admin";
+
+    item.innerHTML =
+      '<input type="color" value="' + categoria.cor + '" data-id="' + categoria.id + '" class="cor-categoria-input">' +
+      '<span class="nome-categoria-admin">' + escaparHtml(categoria.nome) + '</span>' +
+      '<button class="btn-acao-icone" title="Excluir categoria" data-id="' + categoria.id + '" data-acao="excluir-categoria">🗑️</button>';
+
+    lista.appendChild(item);
+  });
+
+  lista.querySelectorAll(".cor-categoria-input").forEach(function (input) {
+    input.addEventListener("change", function () {
+      atualizarCorCategoria(input.getAttribute("data-id"), input.value);
+    });
+  });
+
+  lista.querySelectorAll('[data-acao="excluir-categoria"]').forEach(function (botao) {
+    botao.addEventListener("click", function () {
+      excluirCategoriaExistente(botao.getAttribute("data-id"));
+    });
+  });
+}
+
+function criarNovaCategoria() {
+  const nome = document.getElementById("campoNovaCategoriaNome").value.trim();
+  const cor = document.getElementById("campoNovaCategoriaCor").value;
+
+  if (!nome) {
+    mostrarMensagem("Informe o nome da categoria.", "erro");
+    return;
+  }
+
+  chamarApiPost("criarCategoria", { nome: nome, cor: cor }).then(function (resposta) {
+    if (!resposta.sucesso) {
+      mostrarMensagem(resposta.mensagem || "Não foi possível criar a categoria.", "erro");
+      return;
+    }
+
+    mostrarMensagem("Categoria criada com sucesso!", "sucesso");
+    document.getElementById("formNovaCategoria").reset();
+    document.getElementById("campoNovaCategoriaCor").value = "#2f7d5f";
+    carregarCategorias();
+    setTimeout(renderizarCategoriasAdmin, 300);
+  });
+}
+
+function atualizarCorCategoria(id, novaCor) {
+  chamarApiPost("editarCategoria", { id: id, cor: novaCor }).then(function (resposta) {
+    if (!resposta.sucesso) {
+      mostrarMensagem(resposta.mensagem || "Não foi possível atualizar a cor.", "erro");
+      return;
+    }
+    mostrarMensagem("Cor atualizada.", "sucesso");
+    carregarCategorias();
+    renderizarHistorico();
+    atualizarGraficoCategorias();
+  });
+}
+
+function excluirCategoriaExistente(id) {
+  const categoria = estado.categorias.find(function (c) { return c.id === id; });
+  const nomeCategoria = categoria ? categoria.nome : "esta categoria";
+
+  estado.idCategoriaParaExcluir = id;
+
+  document.querySelector("#modalConfirmacao h3").textContent = "Desativar categoria?";
+  document.querySelector("#modalConfirmacao p").textContent =
+    'Desativar "' + nomeCategoria + '"? Os gastos já registrados com essa categoria continuarão normalmente no histórico, mas ela deixará de aparecer para novos gastos.';
+
+  abrirModal("modalConfirmacao");
+}
+
+function confirmarExclusaoCategoria() {
+  const id = estado.idCategoriaParaExcluir;
+
+  chamarApiPost("excluirCategoria", { id: id }).then(function (resposta) {
+    fecharModal("modalConfirmacao");
+    estado.idCategoriaParaExcluir = null;
+    restaurarTextoModalConfirmacao();
+
+    if (!resposta.sucesso) {
+      mostrarMensagem(resposta.mensagem || "Não foi possível desativar a categoria.", "erro");
+      return;
+    }
+    mostrarMensagem("Categoria desativada.", "sucesso");
+    carregarCategorias();
+    setTimeout(renderizarCategoriasAdmin, 300);
+  });
+}
+
+function restaurarTextoModalConfirmacao() {
+  document.querySelector("#modalConfirmacao h3").textContent = "Excluir gasto?";
+  document.querySelector("#modalConfirmacao p").textContent =
+    "Esta ação não pode ser desfeita. Deseja realmente excluir este gasto?";
 }
 
 
@@ -195,16 +360,38 @@ function carregarGastosDoMes() {
   });
 }
 
+function obterGastosFiltrados() {
+  return estado.gastos.filter(function (gasto) {
+    const bateBusca = !estado.filtros.busca ||
+      (gasto.descricao || "").toLowerCase().indexOf(estado.filtros.busca) !== -1;
+
+    const bateCategoria = !estado.filtros.categoria ||
+      gasto.categoria === estado.filtros.categoria;
+
+    const bateFormaPagamento = !estado.filtros.formaPagamento ||
+      gasto.formaPagamento === estado.filtros.formaPagamento;
+
+    return bateBusca && bateCategoria && bateFormaPagamento;
+  });
+}
+
 function renderizarHistorico() {
   const lista = document.getElementById("listaHistorico");
   lista.innerHTML = "";
+
+  const gastosFiltrados = obterGastosFiltrados();
 
   if (estado.gastos.length === 0) {
     lista.innerHTML = '<p class="mensagem-vazia">Nenhum gasto registrado neste mês.</p>';
     return;
   }
 
-  estado.gastos.forEach(function (gasto) {
+  if (gastosFiltrados.length === 0) {
+    lista.innerHTML = '<p class="mensagem-vazia">Nenhum gasto encontrado com esse filtro.</p>';
+    return;
+  }
+
+  gastosFiltrados.forEach(function (gasto) {
     const item = document.createElement("div");
     item.className = "item-gasto";
 
@@ -263,7 +450,24 @@ function registrarOuAtualizarGasto() {
   if (estado.idEmEdicao) {
     payload.id = estado.idEmEdicao;
     chamarApiPost("editarGasto", payload).then(function (resposta) {
-      tratarRespostaGravacao(resposta, "Gasto atualizado com sucesso!");
+      if (!resposta.sucesso) {
+        mostrarMensagem(resposta.mensagem || "Não foi possível salvar o gasto.", "erro");
+        return;
+      }
+
+      mostrarMensagem("Gasto atualizado com sucesso!", "sucesso");
+
+      // Atualização otimista: já reflete a edição localmente
+      const indice = estado.gastos.findIndex(function (g) { return g.id === payload.id; });
+      if (indice !== -1) {
+        estado.gastos[indice] = Object.assign({}, estado.gastos[indice], payload);
+      }
+
+      sairModoEdicao();
+      limparFormulario();
+      renderizarHistorico();
+      atualizarDashboardLocal();
+      atualizarGraficoCategorias();
     });
   } else {
     enviarGasto(payload, false);
@@ -282,20 +486,30 @@ function enviarGasto(payload, forcarMesmoDuplicado) {
       abrirModal("modalDuplicidade");
       return;
     }
-    tratarRespostaGravacao(resposta, "Gasto registrado com sucesso!");
+
+    if (!resposta.sucesso) {
+      mostrarMensagem(resposta.mensagem || "Não foi possível salvar o gasto.", "erro");
+      return;
+    }
+
+    mostrarMensagem("Gasto registrado com sucesso!", "sucesso");
+    sairModoEdicao();
+    limparFormulario();
+
+    // Atualização otimista: já insere localmente, sem esperar recarregar tudo do servidor
+    const gastoNovo = Object.assign({}, payload, {
+      id: resposta.id,
+      status: "ATIVO"
+    });
+
+    const mesDoGasto = gastoNovo.data ? gastoNovo.data.substring(0, 7) : "";
+    if (mesDoGasto === estado.mesAtual) {
+      estado.gastos.unshift(gastoNovo);
+      renderizarHistorico();
+      atualizarDashboardLocal();
+      atualizarGraficoCategorias();
+    }
   });
-}
-
-function tratarRespostaGravacao(resposta, mensagemSucesso) {
-  if (!resposta.sucesso) {
-    mostrarMensagem(resposta.mensagem || "Não foi possível salvar o gasto.", "erro");
-    return;
-  }
-
-  mostrarMensagem(mensagemSucesso, "sucesso");
-  sairModoEdicao();
-  limparFormulario();
-  carregarGastosDoMes();
 }
 
 function validarFormularioLocal(payload) {
@@ -368,7 +582,9 @@ function abrirModalExclusao(id) {
 function confirmarExclusao() {
   if (!estado.idParaExcluir) return;
 
-  chamarApiPost("excluirGasto", { id: estado.idParaExcluir }).then(function (resposta) {
+  const idExcluido = estado.idParaExcluir;
+
+  chamarApiPost("excluirGasto", { id: idExcluido }).then(function (resposta) {
     fecharModal("modalConfirmacao");
     estado.idParaExcluir = null;
 
@@ -378,7 +594,12 @@ function confirmarExclusao() {
     }
 
     mostrarMensagem("Gasto excluído com sucesso.", "sucesso");
-    carregarGastosDoMes();
+
+    // Atualização otimista: remove localmente sem esperar recarregar tudo
+    estado.gastos = estado.gastos.filter(function (g) { return g.id !== idExcluido; });
+    renderizarHistorico();
+    atualizarDashboardLocal();
+    atualizarGraficoCategorias();
   });
 }
 
@@ -397,6 +618,36 @@ function atualizarDashboard() {
     document.getElementById("dashMaiorCategoria").textContent = d.maiorCategoria || "—";
     document.getElementById("dashMaiorGasto").textContent = formatarMoeda(d.maiorGasto);
   });
+}
+
+// Calcula o dashboard a partir dos gastos já carregados em memória —
+// usado após criar/editar/excluir, para atualizar a tela na hora,
+// sem esperar uma nova chamada ao servidor.
+function atualizarDashboardLocal() {
+  let totalMes = 0;
+  let maiorGasto = 0;
+  const porCategoria = {};
+
+  estado.gastos.forEach(function (g) {
+    totalMes += g.valor;
+    if (g.valor > maiorGasto) maiorGasto = g.valor;
+    if (!porCategoria[g.categoria]) porCategoria[g.categoria] = 0;
+    porCategoria[g.categoria] += g.valor;
+  });
+
+  let maiorCategoria = "";
+  let maiorValorCategoria = 0;
+  for (const cat in porCategoria) {
+    if (porCategoria[cat] > maiorValorCategoria) {
+      maiorValorCategoria = porCategoria[cat];
+      maiorCategoria = cat;
+    }
+  }
+
+  document.getElementById("dashTotalMes").textContent = formatarMoeda(totalMes);
+  document.getElementById("dashQuantidade").textContent = estado.gastos.length;
+  document.getElementById("dashMaiorCategoria").textContent = maiorCategoria || "—";
+  document.getElementById("dashMaiorGasto").textContent = formatarMoeda(maiorGasto);
 }
 
 
