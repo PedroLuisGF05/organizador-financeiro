@@ -12,6 +12,19 @@
   --raio: 12px;
 }
 
+[data-tema="escuro"] {
+  --cor-fundo: #14181c;
+  --cor-superficie: #1f252b;
+  --cor-primaria: #3fa377;
+  --cor-primaria-escura: #2f8a63;
+  --cor-perigo: #e0574a;
+  --cor-perigo-escura: #c8483c;
+  --cor-texto: #eef1f4;
+  --cor-texto-suave: #9aa5b1;
+  --cor-borda: #2c333a;
+  --sombra-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -21,6 +34,38 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   background-color: var(--cor-fundo);
   color: var(--cor-texto);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* BOTÃO FLUTUANTE — NOVO GASTO (mobile) */
+.btn-flutuante {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--cor-primaria);
+  color: white;
+  border: none;
+  font-size: 1.8rem;
+  line-height: 1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-flutuante:hover {
+  background: var(--cor-primaria-escura);
+}
+
+@media (min-width: 768px) {
+  .btn-flutuante {
+    display: none;
+  }
 }
 
 /* RESPONSIVIDADE — CELULAR (padrão, mobile-first) */
@@ -99,6 +144,12 @@ body {
   flex-direction: column;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.app-header-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .app-header h1 {
@@ -232,6 +283,16 @@ section h2 {
 .linha-campos {
   display: flex;
   gap: 12px;
+}
+
+.campo input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+}
+
+[data-tema="escuro"] .campo input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
 
 .acoes-formulario {
