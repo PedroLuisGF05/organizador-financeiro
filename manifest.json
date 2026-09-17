@@ -1,0 +1,25 @@
+{
+  "name": "Organizador Financeiro",
+  "short_name": "Financeiro",
+  "description": "Organizador financeiro pessoal integrado ao Google Sheets",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#2f7d5f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
