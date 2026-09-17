@@ -1,6 +1,6 @@
 /**
  * ORGANIZADOR FINANCEIRO — SCRIPT PRINCIPAL
- * Versão: v0.4
+ * Versão: v0.5
  *
  * IMPORTANTE: preencha as duas constantes abaixo antes de usar o app:
  * - URL_API: a URL do Web App publicado no Google Apps Script.
@@ -36,11 +36,37 @@ const estado = {
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", function () {
+  aplicarTemaSalvo();
   configurarEventos();
   definirDataPadrao();
   carregarCategorias();
   carregarGastosDoMes();
 });
+
+// O tema (claro/escuro) é uma preferência de interface, não um dado
+// financeiro — por isso é o único uso de localStorage no app,
+// conforme combinado (localStorage só para preferências auxiliares).
+function aplicarTemaSalvo() {
+  const temaSalvo = localStorage.getItem("organizador_tema");
+  if (temaSalvo === "escuro") {
+    document.documentElement.setAttribute("data-tema", "escuro");
+    document.getElementById("btnModoEscuro").textContent = "☀️";
+  }
+}
+
+function alternarModoEscuro() {
+  const estaEscuro = document.documentElement.getAttribute("data-tema") === "escuro";
+
+  if (estaEscuro) {
+    document.documentElement.removeAttribute("data-tema");
+    localStorage.setItem("organizador_tema", "claro");
+    document.getElementById("btnModoEscuro").textContent = "🌙";
+  } else {
+    document.documentElement.setAttribute("data-tema", "escuro");
+    localStorage.setItem("organizador_tema", "escuro");
+    document.getElementById("btnModoEscuro").textContent = "☀️";
+  }
+}
 
 function configurarEventos() {
   document.getElementById("btnMesAnterior").addEventListener("click", function () {
@@ -115,6 +141,15 @@ function configurarEventos() {
   document.getElementById("formNovaCategoria").addEventListener("submit", function (evento) {
     evento.preventDefault();
     criarNovaCategoria();
+  });
+
+  // Modo escuro
+  document.getElementById("btnModoEscuro").addEventListener("click", alternarModoEscuro);
+
+  // Botão flutuante — rola até o formulário
+  document.getElementById("btnFlutuanteNovoGasto").addEventListener("click", function () {
+    document.querySelector(".secao-formulario").scrollIntoView({ behavior: "smooth" });
+    document.getElementById("campoDescricao").focus();
   });
 }
 
@@ -284,8 +319,19 @@ function criarNovaCategoria() {
     mostrarMensagem("Categoria criada com sucesso!", "sucesso");
     document.getElementById("formNovaCategoria").reset();
     document.getElementById("campoNovaCategoriaCor").value = "#2f7d5f";
-    carregarCategorias();
-    setTimeout(renderizarCategoriasAdmin, 300);
+    recarregarCategoriasEAtualizarTela();
+  });
+}
+
+function recarregarCategoriasEAtualizarTela() {
+  return chamarApiGet("listarCategorias").then(function (resposta) {
+    if (resposta.sucesso) {
+      estado.categorias = resposta.dados.filter(function (c) { return c.ativa; });
+      preencherSelectCategorias();
+      renderizarCategoriasAdmin();
+      renderizarHistorico();
+      atualizarGraficoCategorias();
+    }
   });
 }
 
@@ -296,9 +342,7 @@ function atualizarCorCategoria(id, novaCor) {
       return;
     }
     mostrarMensagem("Cor atualizada.", "sucesso");
-    carregarCategorias();
-    renderizarHistorico();
-    atualizarGraficoCategorias();
+    recarregarCategoriasEAtualizarTela();
   });
 }
 
@@ -328,8 +372,7 @@ function confirmarExclusaoCategoria() {
       return;
     }
     mostrarMensagem("Categoria desativada.", "sucesso");
-    carregarCategorias();
-    setTimeout(renderizarCategoriasAdmin, 300);
+    recarregarCategoriasEAtualizarTela();
   });
 }
 
